@@ -1,0 +1,111 @@
+[package]
+title = "Pixar Hydra Engine"
+description = "Allows using the Pixar Hydra delegates in the Kit viewport."
+version = "1.2.4"
+authors = ["NVIDIA"]
+category = "Rendering"
+keywords = ["hydra", "storm", "hd", "pxr", "pixar", "st"]
+readme  = "docs/README.md"
+changelog="docs/CHANGELOG.md"
+preview_image = "data/hydra-logo.png"
+icon = "data/hydra-icon.png"
+support_level = "Sample"
+
+[core]
+# we do not support disabling this extension once loaded
+reloadable = false
+
+[[native.plugin]]
+path = "bin/*.plugin"
+
+[dependencies]
+"omni.usd.core" = {}
+"omni.hydra.usdrt_delegate" = { optional=true }
+"omni.gpu_foundation" = {}
+
+[settings]
+# Avoid starting with debug materials enabled
+rtx.debugMaterialType = -1
+
+[settings.exts.pxr]
+# Milliseconds to wait before subsequent attempts making OpenGL context active
+glContext.wait = 4
+# Milliseconds to continue to try and make OpenGL context active
+glContext.timeout = 1000
+# Interval (in seconds) between error messages when context could not be made active
+glContext.errorInterval = 5
+
+[[python.module]]
+name = "omni.hydra.pxr.engine"
+
+[[test]]
+args = [
+    "--/renderer/enabled=pxr",
+    "--/renderer/active=pxr",
+    "--/renderer/multiGpu/enabled=false",
+    "--/renderer/multiGpu/autoEnable=false", # Disable mGPU with PXR due to OM-51026, OM-53611
+    "--/renderer/multiGpu/maxGpuCount=1",
+    "--/app/asyncRendering=false",
+    "--/app/docks/disabled=true",
+    "--/app/viewport/forceHideFps=true",
+    "--/app/window/hideUi=true",
+    "--/app/window/width=512",
+    "--/app/window/height=512",
+    "--/app/renderer/resolution/width=512",
+    "--/app/renderer/resolution/height=512",
+    "--/app/window/dpiScaleOverride=1.0",
+    "--/app/window/scaleToMonitor=false",
+]
+
+dependencies = [
+    "omni.kit.mainwindow",
+    "omni.kit.test_helpers_gfx",
+    "omni.kit.viewport.utility",
+    "omni.kit.viewport.window",
+    "omni.kit.ui_test",
+]
+
+stdoutFailPatterns.exclude = [
+	"*HydraRenderer failed to render this frame*",  # Can drop a frame or two rendering with OpenGL interop
+]
+
+[[test]]
+name = "compatibility+vulkan"
+args = [
+    "--vulkan",
+    "--/exts/omni.kit.renderer.core/compatibilityMode=true",
+    "--/renderer/enabled=pxr",
+    "--/renderer/active=pxr",
+    "--/renderer/multiGpu/enabled=false",
+    "--/renderer/multiGpu/autoEnable=false", # Disable mGPU with PXR due to OM-51026, OM-53611
+    "--/renderer/multiGpu/maxGpuCount=1",
+    "--/app/asyncRendering=false",
+    "--/app/docks/disabled=true",
+    "--/app/viewport/forceHideFps=true",
+    "--/app/window/hideUi=true",
+    "--/app/window/width=512",
+    "--/app/window/height=512",
+    "--/app/renderer/resolution/width=512",
+    "--/app/renderer/resolution/height=512",
+    "--/app/window/dpiScaleOverride=1.0",
+    "--/app/window/scaleToMonitor=false",
+]
+
+dependencies = [
+    "omni.kit.mainwindow",
+    "omni.kit.test_helpers_gfx",
+    "omni.kit.viewport.utility",
+    "omni.kit.viewport.window",
+    "omni.kit.ui_test",
+]
+
+stdoutFailPatterns.exclude = [
+    "*No resource allocator was provided to the texture streaming system*",
+    "*Failed to create the texture streaming service*",
+	"*HydraRenderer failed to render this frame*",  # Can drop a frame or two rendering with OpenGL interop
+]
+# Only run compatibility-mode + Vulkan tests for Storm on Windows
+"filter:platform"."windows-x86_64".enabled = true
+"filter:platform"."linux-x86_64".enabled = false
+"filter:platform"."linux-aarch64".enabled = false
+"filter:platform"."macos-universal".enabled = false

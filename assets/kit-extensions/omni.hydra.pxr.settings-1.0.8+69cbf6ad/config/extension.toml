@@ -1,0 +1,67 @@
+[package]
+# Semantic Versioning is used: https://semver.org/
+version = "1.0.8"
+
+# Lists people or organizations that are considered the "authors" of the package.
+authors = ["NVIDIA"]
+
+# The title and description fields are primarily for displaying extension info in UI
+title = "External Hydra Delegate Renderer Settings"
+description="Settings to an external Hydra delegate"
+
+# Path (relative to the root) or content of readme markdown file for UI.
+readme  = "docs/README.md"
+
+# URL of the extension source repository.
+repository = ""
+
+# One of categories for UI.
+category = "Rendering"
+support_level = "Sample"
+
+# Keywords for the extension
+keywords = ["kit", "hydra", "rendering", "external"]
+
+# Location of change log file in target (final) folder of extension, relative to the root. Can also be just a content
+# of it instead of file path. More info on writing changelog: https://keepachangelog.com/en/1.0.0/
+changelog="docs/CHANGELOG.md"
+
+# Preview image and icon. Folder named "data" automatically goes in git lfs (see .gitattributes file).
+# Preview image is shown in "Overview" of Extensions window. Screenshot of an extension might be a good preview image.
+preview_image = "data/preview.png"
+
+# Icon is shown in Extensions window, it is recommended to be square, of size 256x256.
+icon = "data/hydra-icon.png"
+
+[dependencies]
+"omni.ui" = {}
+"omni.rtx.window.settings" = {}
+"omni.hydra.pxr" = {}
+
+# Main python module this extension provides, it will be publicly available as "import omni.example.hello".
+[[python.module]]
+name = "omni.hydra.pxr.settings"
+
+[[test]]
+args = [
+    "--/renderer/enabled=pxr",
+    "--/renderer/active=pxr",
+    "--/renderer/multiGpu/enabled=false",
+    "--/renderer/multiGpu/autoEnable=false", # Disable mGPU with PXR due to OM-51026, OM-53611
+    "--/renderer/multiGpu/maxGpuCount=1",
+    "--/app/asyncRendering=false",
+    "--/pxr/rendermode=HdStormRendererPlugin",
+    "--/app/window/dpiScaleOverride=1.0",
+    "--/app/window/scaleToMonitor=false",
+    "--/app/window/width=640",
+    "--/app/window/height=500",
+]
+dependencies = [
+    "omni.kit.viewport.utility", # To hide the default Viewport
+    "omni.kit.viewport.window",
+    "omni.kit.test_suite.helpers",
+    "omni.kit.ui_test",
+]
+stdoutFailPatterns.exclude = [
+	"*HydraRenderer failed to render this frame*",  # Can drop a frame or two rendering with OpenGL interop
+]

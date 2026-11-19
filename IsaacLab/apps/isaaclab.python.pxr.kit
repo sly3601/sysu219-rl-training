@@ -1,0 +1,41 @@
+[package]
+title = "Isaac Lab Python with Hydra Storm"
+version = "2.3.2"
+
+[dependencies]
+"isaaclab.python" = {}
+"omni.kit.viewport.pxr" = {}
+"omni.hydra.pxr.settings" = {}
+"omni.hydra.usdrt_delegate" = {}
+
+[settings]
+renderer.enabled = "pxr"
+renderer.active = "pxr"
+renderer.gpuEnumeration.glInterop.enabled = true
+renderer.multiGpu.enabled = false
+renderer.multiGpu.autoEnable = false
+renderer.multiGpu.maxGpuCount = 1
+app.asyncRendering = false
+app.useFabricSceneDelegate = true
+physics.fabricUpdateTransformations = true
+persistent.app.hydra.displayPurpose.guide = false
+app.extensions.registryEnabled = false
+crashreporter.enabled = false
+persistent.isaac.asset_root.cloud = "${app}/../../assets"
+
+[settings.app.exts]
+folders = [
+    "${exe-path}/exts",
+    "${exe-path}/extscore",
+    "${exe-path}/../exts",
+    "${exe-path}/../extsDeprecated",
+    "${exe-path}/../extscache",
+    "${exe-path}/../extsPhysics",
+    "${exe-path}/../isaacsim/exts",
+    "${exe-path}/../isaacsim/extsDeprecated",
+    "${exe-path}/../isaacsim/extscache",
+    "${exe-path}/../isaacsim/extsPhysics",
+    "${app}",
+    "${app}/../source",
+    "${app}/../../assets/kit-extensions",
+]

@@ -1,0 +1,48 @@
+#usda 1.0
+(
+    defaultPrim = "PlayGrid"
+)
+
+def Material "PlayGrid"
+{
+    token outputs:surface.connect = </PlayGrid/Surface.outputs:surface>
+
+    def Shader "Surface"
+    {
+        uniform token info:id = "UsdPreviewSurface"
+        color3f inputs:diffuseColor.connect = </PlayGrid/Grid.outputs:rgb>
+        color3f inputs:emissiveColor.connect = </PlayGrid/Grid.outputs:rgb>
+        float inputs:roughness = 1
+        token outputs:surface
+    }
+
+    def Shader "Grid"
+    {
+        uniform token info:id = "UsdUVTexture"
+        asset inputs:file = @./Materials/Textures/Wireframe_blue.png@
+        token inputs:sourceColorSpace = "raw"
+        token inputs:wrapS = "repeat"
+        token inputs:wrapT = "repeat"
+        float2 inputs:st.connect = </PlayGrid/Tile.outputs:result>
+        # Map the texture's blue interior and white lines to two neutral grays.
+        float4 inputs:scale = (0.32, 0.363, 0.427, 1)
+        float4 inputs:bias = (0.26, 0.217, 0.153, 0)
+        float3 outputs:rgb
+    }
+
+    def Shader "Tile"
+    {
+        uniform token info:id = "UsdTransform2d"
+        float2 inputs:in.connect = </PlayGrid/UV.outputs:result>
+        # Two cells per tile on the 100 m visual floor give 0.5 m squares.
+        float2 inputs:scale = (100, 100)
+        float2 outputs:result
+    }
+
+    def Shader "UV"
+    {
+        uniform token info:id = "UsdPrimvarReader_float2"
+        token inputs:varname = "st"
+        float2 outputs:result
+    }
+}
