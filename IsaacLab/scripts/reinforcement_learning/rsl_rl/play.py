@@ -12,12 +12,14 @@ import os
 import shutil
 import sys
 
+_SYSU219_PLAY_TASKS = {"Isaac-Velocity-Flat-SYSU219-Play-v0", "Isaac-RMA-SYSU219-Stage1-v0"}
+
 # Give each standalone SYSU219 player fresh shared memory before Kit imports Carbonite.
 if sys.platform == "linux" and __name__ == "__main__":
     task_parser = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
     task_parser.add_argument("--task")
     play_task = task_parser.parse_known_args()[0].task
-    if play_task == "Isaac-Velocity-Flat-SYSU219-Play-v0" and not os.environ.pop("SYSU219_PLAY_PRIVATE_SHM", None):
+    if play_task in _SYSU219_PLAY_TASKS and not os.environ.pop("SYSU219_PLAY_PRIVATE_SHM", None):
         bwrap = shutil.which("bwrap")
         if bwrap:
             os.execv(bwrap, [
@@ -175,7 +177,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
 
     # create isaac environment
     env = gym.make(args_cli.task, cfg=env_cfg, render_mode="rgb_array" if args_cli.video else None)
-    if args_cli.task == "Isaac-Velocity-Flat-SYSU219-Play-v0" and env.unwrapped.sim.has_gui():
+    if args_cli.task in _SYSU219_PLAY_TASKS and env.unwrapped.sim.has_gui():
         _configure_sysu219_orbit()
 
         # ================= SYSU219 DEBUG START =================
