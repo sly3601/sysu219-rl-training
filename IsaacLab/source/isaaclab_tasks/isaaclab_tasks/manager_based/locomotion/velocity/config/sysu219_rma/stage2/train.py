@@ -1,4 +1,4 @@
-"""Train the SYSU219 RMA history encoder against the frozen Stage 1 v1 actor."""
+"""Train the SYSU219 RMA history encoder against a frozen Stage 1 actor."""
 
 import argparse
 from datetime import datetime
@@ -19,6 +19,8 @@ def parse_args():
     from isaaclab.app import AppLauncher
 
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--task", default=TASK, help="Registered Stage 1 environment for student rollouts.")
+    parser.add_argument("--teacher-checkpoint", type=Path, default=TEACHER, help="Frozen Stage 1 checkpoint.")
     parser.add_argument("--num-envs", type=int, default=4000)
     parser.add_argument("--steps-per-env", type=int, default=20)
     parser.add_argument("--iterations", type=int, default=1000)
@@ -33,8 +35,9 @@ def parse_args():
         parser.error("Environment count, steps, iterations and save interval must be positive.")
     if args.num_envs * args.steps_per_env % 4:
         parser.error("The rollout size must be divisible by the four mini-batches.")
-    if not TEACHER.is_file():
-        parser.error(f"Missing Stage 1 teacher: {TEACHER}")
+    args.teacher_checkpoint = args.teacher_checkpoint.expanduser().resolve()
+    if not args.teacher_checkpoint.is_file():
+        parser.error(f"Missing Stage 1 teacher: {args.teacher_checkpoint}")
     if args.resume is not None:
         args.resume = args.resume.expanduser().resolve()
         if not args.resume.is_file():
@@ -93,12 +96,14 @@ def train(args):
         AdaptationModule, FrozenTeacher,
     )
 
-    cfg = parse_env_cfg(TASK, device=args.device, num_envs=args.num_envs)
+    cfg = parse_env_cfg(args.task, device=args.device, num_envs=args.num_envs)
     cfg.seed = args.seed
     samples = args.num_envs * args.steps_per_env
+    teacher_path = args.teacher_checkpoint
     config = {
-        "task": TASK, "teacher_checkpoint": str(TEACHER.relative_to(ROOT)),
-        "teacher_sha256": hashlib.sha256(TEACHER.read_bytes()).hexdigest(),
+        "task": args.task,
+        "teacher_checkpoint": str(teacher_path.relative_to(ROOT) if teacher_path.is_relative_to(ROOT) else teacher_path),
+        "teacher_sha256": hashlib.sha256(teacher_path.read_bytes()).hexdigest(),
         "seed": args.seed, "num_envs": args.num_envs, "steps_per_env": args.steps_per_env,
         "samples_per_iteration": samples, "iterations": args.iterations, "minibatches": 4,
         "learning_rate": 5e-4, "history_steps": 50, "control_hz": 100,
@@ -115,8 +120,8 @@ def train(args):
         run_dir = args.resume.parent
         start_iteration = checkpoint["iteration"]
     cfg.log_dir = str(run_dir)
-    teacher = FrozenTeacher.from_checkpoint(TEACHER, cfg.sim.device)
-    env = gym.make(TASK, cfg=cfg)
+    teacher = FrozenTeacher.from_checkpoint(teacher_path, cfg.sim.device)
+    env = gym.make(args.task, cfg=cfg)
     try:
         vec = RslRlVecEnvWrapper(env)
         env.unwrapped.restore_paper_iteration(cfg.disturbance_full_iteration)
@@ -125,7 +130,7 @@ def train(args):
         student = AdaptationModule().to(vec.device)
         optimizer = torch.optim.Adam(student.parameters(), lr=config["learning_rate"])
         rollout_state = RolloutState(vec, teacher)
-        print(f"Frozen teacher: {TEACHER}\nStage 2 run: {run_dir}", flush=True)
+        print(f"Frozen teacher: {teacher_path}\nStage 2 run: {run_dir}", flush=True)
         if checkpoint is None:
             (run_dir / "config.json").write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
             save_checkpoint(run_dir, 0, student, teacher, optimizer, config)
